@@ -1,0 +1,24 @@
+{
+  "name": "projeto_nodejs_mysql",
+  "version": "1.0.0",
+  "description": "Projeto nodejs e mysql",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "express",
+    "express-handlebars",
+    "bootstrap",
+    "mysql"
+  ],
+  "author": "Andre Silveira",
+  "license": "ISC",
+  "dependencies": {
+    "bootstrap": "^5.3.3",
+    "express": "^4.19.2",
+    "express-handlebars": "^7.1.3",
+    "mysql2": "^3.11.0",
+    "nodemon": "^3.1.4"
+  }
+}
