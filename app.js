@@ -62,30 +62,49 @@ app.get('/', (req, res) => {
     })
 });
 
+// Rota Principal contendo a situação
+app.get('/:situacao', (req, res) => {
+    // SQL
+    let sql = "select * from produtos";
+
+    // executar o SQL
+    conexao.query(sql, function(erro, retorno){
+        res.render('formulario', {produtos:retorno, situacao:req.params.situacao});
+    })
+});
+
 // Rota de cadastro
 app.post('/cadastrar', function(req,res){
-    // Obter os dados que serão utilizados para o cadastro
-    let nome = req.body.nome;
-    let valor = req.body.valor;
-    let imagem = req.files.imagem.name;
+    try{
+        // Obter os dados que serão utilizados para o cadastro
+        let nome = req.body.nome;
+        let valor = req.body.valor;
+        let imagem = req.files.imagem.name;
 
-    // SQL
-    let sql = `INSERT INTO produtos (nome, valor, imagem) VALUES ('${nome}', ${valor}, '${imagem}')`;
-
-    // Executar o comando SQL
-    conexao.query(sql, function(erro, retorno){
-        // caso ocorra algum erro
-        if(erro) throw erro;
-
-        // Caso o cadastro seja feito com sucesso
-        req.files.imagem.mv(__dirname + '/imagens/' + req.files.imagem.name);
-        console.log(retorno);
-        res.end();
-    });
-
-    //Retornar para a rota principal
-    res.redirect('/');
+        //Validar o nome do produto e o valor
+        if(nome == '' || valor == '' || isNaN(valor)){
+            res.redirect('/falhaCadastro');
+        }
+        else{
+            // SQL
+            let sql = `INSERT INTO produtos (nome, valor, imagem) VALUES ('${nome}', ${valor}, '${imagem}')`;
+            // Executar o comando SQL
+            conexao.query(sql, function(erro, retorno){
+                // caso ocorra algum erro
+                if(erro) throw erro;
     
+                // Caso o cadastro seja feito com sucesso
+                req.files.imagem.mv(__dirname + '/imagens/' + req.files.imagem.name);
+                console.log(retorno);
+                res.end();
+            });
+        }
+        //Retornar para a rota principal
+        res.redirect('/okCadastro');
+    }
+    catch(erro){
+        res.redirect('/falhaCadastro')
+    }
 })
 
 //Rota para remover produtos
@@ -114,7 +133,67 @@ app.get('/remover/:codigo&:imagem', function(req, res){
 
 // Rota para redirecionar para o formulário de alteração / edição
 app.get('/formularioEditar/:codigo', function(req, res){
-    res.render('formularioEditar');
+    
+    // SQL
+    let sql = `SELECT * FROM produtos WHERE codigo = ${req.params.codigo}`;
+
+    // EXECUTAR O COMANDO SQL
+    conexao.query(sql, function(erro, retorno){
+        //CASO HAJA FALHA NO COMANDO SQL
+        if(erro) throw erro;
+
+        // CASO CONSIGA EXECUTAR O COMANDO SQL
+        res.render('formularioEditar', {produto:retorno[0]});
+    });
+});
+
+// ROTA PARA EDITAR PRODUTOS
+app.post('/editar', function(req, res){
+
+    //OBTER OS DADOS DO FORMULÁRIO
+    let nome = req.body.nome;
+    let valor = req.body.valor;
+    let codigo = req.body.codigo;
+    let nomeImagem = req.body.nomeImagem;
+    
+
+    // DEFINIR O TIPO DE EDIÇÃO
+    try{
+        // OBJETO DE IMAGEM
+        let imagem = req.files.imagem;
+
+        // SQL
+        let sql = `UPDATE produtos SET nome = '${nome}', valor=${valor}, imagem='${imagem.name}' WHERE codigo=${codigo}`;
+
+        // EXECUTAR COMANDO SQL
+        conexao.query(sql, function(erro, retorno){
+            // CASO FALHE O COMANDO SQL
+            if(erro) throw erro;
+
+            //REMOVER IMAGEM ANTIGA
+            fs.unlink(__dirname+'/imagens/'+nomeImagem, (erro_imagem) => {
+                console.log('Falha ao remover a imagem');
+            });
+
+            //CADASTRAR NOVA IMAGEM
+            imagem.mv(__dirname+'/imagens/'+imagem.name);
+
+        });
+    }catch{
+        let sql = `UPDATE produtos SET nome = '${nome}', valor=${valor} WHERE codigo=${codigo}`;
+
+        //EXECUTAR COMANDO SQL
+        conexao.query(sql,function(erro, retorno){
+            //CASO FALHE O COMANDO SQL
+            if(erro) throw erro;
+        });
+    }
+    
+
+    // REDIRECIONAMENTO PARA A RAIZ
+    res.redirect('/');
+
+
 });
 
 // Servidor
