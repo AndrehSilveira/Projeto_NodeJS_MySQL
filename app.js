@@ -29,7 +29,14 @@ app.use('/css', express.static('./css'));
 app.use('/imagens', express.static('./imagens'));
 
 // CONFIGURAÇÃO DO EXPRESS-HANDLEBAR
-app.engine('handlebars', engine());
+app.engine('handlebars', engine({
+    helpers: {
+      // Função auxiliar para verificar igualdade
+      condicionalIgualdade: function (parametro1, parametro2, options) {
+        return parametro1 === parametro2 ? options.fn(this) : options.inverse(this);
+      }
+    }
+  }));
 app.set('view engine', 'handlebars');
 app.set('views', './views');
 
@@ -109,26 +116,31 @@ app.post('/cadastrar', function(req,res){
 
 //Rota para remover produtos
 app.get('/remover/:codigo&:imagem', function(req, res){
-    // SQL
-    let sql = `delete from produtos where codigo = ${req.params.codigo}`;
+    // TRATAMENTO DE EXCEÇÃO
+    try{
+        // SQL
+        let sql = `delete from produtos where codigo = ${req.params.codigo}`;
 
-    // Executar o comando SQL
-    conexao.query(sql, function(erro, retorno){
-        // Caso falhe o comando SQL
-        if(erro) throw erro;
+        // Executar o comando SQL
+        conexao.query(sql, function(erro, retorno){
+            // Caso falhe o comando SQL
+            if(erro) throw erro;
 
-        // Caso o comando SQL funcione
-        fs.unlink(__dirname+'/imagens/'+req.params.imagem, (erro_imagem) => {
-            if(erro_imagem){
-                console.log('Falha ao remover a imagem');  
-                return;
-            }
-            console.log('Arquivo excluído com sucesso!');
+            // Caso o comando SQL funcione
+            fs.unlink(__dirname+'/imagens/'+req.params.imagem, (erro_imagem) => {
+                if(erro_imagem){
+                    console.log('Falha ao remover a imagem');  
+                    return;
+                }
+                console.log('Arquivo excluído com sucesso!');
+            });
         });
-    });
 
     // Redirecionamento
-    res.redirect('/');
+    res.redirect('/okRemover');
+    }catch(erro){
+        re.redirect('/falhaRemover');
+    }
 })
 
 // Rota para redirecionar para o formulário de alteração / edição
@@ -155,9 +167,12 @@ app.post('/editar', function(req, res){
     let valor = req.body.valor;
     let codigo = req.body.codigo;
     let nomeImagem = req.body.nomeImagem;
-    
 
-    // DEFINIR O TIPO DE EDIÇÃO
+    // VALIDAR NOME DO PRODUTO E VALOR
+    if(nome == '' || valor == '' || isNaN(valor)){
+        res.redirect('/falhaEdicao');
+    }else{
+        // DEFINIR O TIPO DE EDIÇÃO
     try{
         // OBJETO DE IMAGEM
         let imagem = req.files.imagem;
@@ -189,11 +204,9 @@ app.post('/editar', function(req, res){
         });
     }
     
-
     // REDIRECIONAMENTO PARA A RAIZ
-    res.redirect('/');
-
-
+    res.redirect('/okEdicao');
+    }
 });
 
 // Servidor
