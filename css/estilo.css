@@ -3,7 +3,7 @@ form{
     text-align: center;
 }
 
-form input{
+form input, form select{
     margin-bottom: 10px;
 }
 
