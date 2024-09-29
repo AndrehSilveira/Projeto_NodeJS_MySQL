@@ -1,5 +1,10 @@
 <main>
-    
+    {{!-- EXIBIR MENSAGEM, SE NECESSÁRIO --}}
+    {{#if semRegistros}}
+    <h1 class="produtoNaoEncontrado">Nenhum produto encontrado :(</h1>
+    {{/if}}
+
+
     {{!-- LISTAGEM DE PRODUTOS --}}
     <div class="container">
         <div class="row">

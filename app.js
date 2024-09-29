@@ -1,14 +1,15 @@
 // Importar módulo express
 const express = require('express');
 
+// Importar módulo de conexão com o banco mysql
+const conexao = require('./BD/conexao_mysql')
+
 // Importar módulo fileupload
 const fileupload = require('express-fileupload')
 
 // IMPORTAR MÓDULO EXPRESS-HANDLEBARS
 const { engine } = require('express-handlebars');
 
-// IMPORTAR MÓDULO MYSQL
-const mysql = require('mysql2');
 
 // File Systems
 const fs = require('fs');
@@ -44,40 +45,55 @@ app.set('views', './views');
 app.use(express.json());
 app.use(express.urlencoded({extended:false}));
 
-// Configuração de conexão
-const conexao = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: 'admin123',
-    database: 'projetoEstudoNode'
-});
 
-// TESTE DE CONEXÃO
-conexao.connect(function(erro){
-    if(erro) throw erro;
-    console.log('Conexão efetuada com sucesso.');
-})
 
 // Rota Principal
 app.get('/', (req, res) => {
-    // SQL
-    let sql = "select * from produtos";
-
-    // executar o SQL
-    conexao.query(sql, function(erro, retorno){
-        res.render('formulario', {produtos:retorno});
-    })
+    res.render('formulario');
 });
 
 // Rota Principal contendo a situação
 app.get('/:situacao', (req, res) => {
-    // SQL
-    let sql = "select * from produtos";
+    res.render('formulario', {situacao:req.params.situacao});
+});
 
-    // executar o SQL
-    conexao.query(sql, function(erro, retorno){
-        res.render('formulario', {produtos:retorno, situacao:req.params.situacao});
-    })
+
+//Rota de listagem
+app.get('/listar/:categoria', (req, res) => {
+    // Obter categoria
+    let categoria = req.params.categoria;
+
+    // SQL
+    let sql = '';
+
+    if(categoria == 'todos'){
+        sql = 'SELECT * FROM produtos';
+    }else{
+        sql = `SELECT * FROM produtos WHERE categoria = '${categoria}'`;
+    }
+
+    // Executar comando SQL
+    conexao.query(sql, (erro, retorno) => {
+        res.render('lista', {produtos:retorno});
+    });
+});
+
+// Rota de pesquisa
+app.post('/pesquisa', (req, res) => {
+    // obter o termo pesquisado
+    let termo = req.body.termo;
+
+    // SQL
+    let sql = `SELECT * FROM produtos WHERE nome LIKE '%${termo}%'`;
+
+    // executar comando sql
+    conexao.query(sql, (erro, retorno) => {
+
+        let semRegistros = retorno.length == 0 ? true : false;
+
+
+        res.render('lista', {produtos:retorno, semRegistros:semRegistros});
+    });
 });
 
 // Rota de cadastro
